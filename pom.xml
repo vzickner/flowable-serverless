@@ -6,7 +6,7 @@
 
     <groupId>org.flowable.experimental</groupId>
     <artifactId>flowable-serverless-parent</artifactId>
-    <version>6.4.0-SNAPSHOT</version>
+    <version>6.5.0-SNAPSHOT</version>
     <modules>
         <module>annotations</module>
         <module>processor</module>
@@ -46,7 +46,7 @@
         <org.apache.maven.plugins.surefire.version>2.22.1</org.apache.maven.plugins.surefire.version>
         <org.apache.maven.plugins.war.version>3.2.2</org.apache.maven.plugins.war.version>
 
-        <org.flowable.version>6.4.0</org.flowable.version>
+        <org.flowable.version>6.5.1.27</org.flowable.version>
         <javapoet.version>1.11.1</javapoet.version>
         <junit.version>5.3.2</junit.version>
         <xmlunit.version>2.6.2</xmlunit.version>

@@ -25,6 +25,7 @@ import org.flowable.common.engine.impl.db.DbSqlSessionFactory;
 import org.flowable.common.engine.impl.interceptor.CommandContext;
 import org.flowable.common.engine.impl.interceptor.Session;
 import org.flowable.common.engine.impl.persistence.cache.EntityCache;
+import org.flowable.common.engine.impl.persistence.entity.Entity;
 
 public class NoDbDbSqlSessionFactory extends DbSqlSessionFactory {
 
@@ -104,6 +105,11 @@ public class NoDbDbSqlSessionFactory extends DbSqlSessionFactory {
         @Override
         public void flush() {
 
+        }
+
+        @Override
+        public boolean isEntityInserted(Entity entity) {
+            return true;
         }
     }
 }

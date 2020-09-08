@@ -15,13 +15,22 @@ package org.flowable.serverless;
 import org.flowable.bpmn.model.BpmnModel;
 import org.flowable.common.engine.impl.event.FlowableEventSupport;
 import org.flowable.common.engine.impl.interceptor.Command;
-import org.flowable.common.engine.impl.interceptor.CommandContext;
 import org.flowable.common.engine.impl.persistence.deploy.DeploymentCache;
 import org.flowable.engine.ProcessEngine;
 import org.flowable.engine.impl.cfg.ProcessEngineConfigurationImpl;
 import org.flowable.engine.impl.persistence.deploy.ProcessDefinitionCacheEntry;
 import org.flowable.engine.impl.persistence.entity.ProcessDefinitionEntityImpl;
 import org.flowable.engine.repository.ProcessDefinition;
+import org.flowable.eventregistry.impl.EventRegistryEngineConfiguration;
+import org.flowable.eventregistry.impl.configurator.EventRegistryEngineConfigurator;
+import org.flowable.eventregistry.impl.persistence.deploy.ChannelDefinitionCacheEntry;
+import org.flowable.eventregistry.impl.persistence.deploy.EventDefinitionCacheEntry;
+import org.flowable.eventregistry.impl.persistence.entity.ChannelDefinitionEntity;
+import org.flowable.eventregistry.impl.persistence.entity.ChannelDefinitionEntityImpl;
+import org.flowable.eventregistry.impl.persistence.entity.EventDefinitionEntity;
+import org.flowable.eventregistry.impl.persistence.entity.EventDefinitionEntityImpl;
+import org.flowable.eventregistry.model.ChannelModel;
+import org.springframework.core.io.Resource;
 
 /**
  * For demo purposes, quick access to proc def.
@@ -29,8 +38,12 @@ import org.flowable.engine.repository.ProcessDefinition;
 public class ServerlessUtil {
 
     public static String PROCESS_DEFINITION_ID = "theProcess";
+    public static String EVENT_DEFINITION_ID = "theEvent";
+    public static String CHANNEL_DEFINITION_ID = "theChannel";
 
     public static ProcessDefinition PROCESS_DEFINITION;
+    public static EventDefinitionEntity EVENT_DEFINITION;
+    public static ChannelDefinitionEntity CHANNEL_DEFINITION;
 
     public static ProcessEngine initializeProcessEngineForBpmnModel(Command<BpmnModel> bpmnModelCommand) {
 
@@ -65,6 +78,26 @@ public class ServerlessUtil {
         DeploymentCache<ProcessDefinitionCacheEntry> processDefinitionCache = engineConfiguration.getProcessDefinitionCache();
         processDefinitionCache.add(PROCESS_DEFINITION_ID, cacheEntry);
 
+    }
+
+    public static void deployEventDefinition(EventRegistryEngineConfiguration eventRegistryEngineConfiguration, String eventDefinitionJson) {
+        DeploymentCache<EventDefinitionCacheEntry> eventDefinitionCache = eventRegistryEngineConfiguration.getEventDefinitionCache();
+
+        EVENT_DEFINITION = new EventDefinitionEntityImpl();
+        EVENT_DEFINITION.setId(EVENT_DEFINITION_ID);
+
+        EventDefinitionCacheEntry cacheEntry = new EventDefinitionCacheEntry(EVENT_DEFINITION, eventDefinitionJson);
+        eventDefinitionCache.add(EVENT_DEFINITION_ID, cacheEntry);
+    }
+
+    public static void deployChannelDefinition(EventRegistryEngineConfiguration eventRegistryEngineConfiguration, ChannelModel channelModel) {
+        DeploymentCache<ChannelDefinitionCacheEntry> eventDefinitionCache = eventRegistryEngineConfiguration.getChannelDefinitionCache();
+
+        CHANNEL_DEFINITION = new ChannelDefinitionEntityImpl();
+        CHANNEL_DEFINITION.setId(CHANNEL_DEFINITION_ID);
+
+        ChannelDefinitionCacheEntry cacheEntry = new ChannelDefinitionCacheEntry(CHANNEL_DEFINITION, channelModel);
+        eventDefinitionCache.add(CHANNEL_DEFINITION_ID, cacheEntry);
     }
 
 }

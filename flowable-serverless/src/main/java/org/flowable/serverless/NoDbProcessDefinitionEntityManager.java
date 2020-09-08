@@ -54,6 +54,17 @@ public class NoDbProcessDefinitionEntityManager implements ProcessDefinitionEnti
     public ProcessDefinitionEntity findProcessDefinitionByDeploymentAndKeyAndTenantId(String deploymentId, String processDefinitionKey, String tenantId) {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public ProcessDefinitionEntity findProcessDefinitionByParentDeploymentAndKey(String s, String s1) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public ProcessDefinitionEntity findProcessDefinitionByParentDeploymentAndKeyAndTenantId(String s, String s1, String s2) {
+        throw new UnsupportedOperationException();
+    }
+
     @Override
     public ProcessDefinition findProcessDefinitionByKeyAndVersionAndTenantId(String processDefinitionKey, Integer processDefinitionVersion,
         String tenantId) {
@@ -71,6 +82,12 @@ public class NoDbProcessDefinitionEntityManager implements ProcessDefinitionEnti
     public void updateProcessDefinitionTenantIdForDeployment(String deploymentId, String newTenantId) {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public void updateProcessDefinitionVersionForProcessDefinitionId(String s, int i) {
+        throw new UnsupportedOperationException();
+    }
+
     @Override
     public void deleteProcessDefinitionsByDeploymentId(String deploymentId) {
         throw new UnsupportedOperationException();

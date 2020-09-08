@@ -28,6 +28,7 @@ import org.flowable.bpmn.model.BpmnModel;
 import org.flowable.bpmn.model.EndEvent;
 import org.flowable.bpmn.model.Event;
 import org.flowable.bpmn.model.ExtensionAttribute;
+import org.flowable.bpmn.model.ExtensionElement;
 import org.flowable.bpmn.model.FieldExtension;
 import org.flowable.bpmn.model.FlowElement;
 import org.flowable.bpmn.model.Gateway;
@@ -37,6 +38,7 @@ import org.flowable.bpmn.model.ManualTask;
 import org.flowable.bpmn.model.Process;
 import org.flowable.bpmn.model.ReceiveTask;
 import org.flowable.bpmn.model.ScriptTask;
+import org.flowable.bpmn.model.SendEventServiceTask;
 import org.flowable.bpmn.model.SequenceFlow;
 import org.flowable.bpmn.model.ServiceTask;
 import org.flowable.bpmn.model.StartEvent;
@@ -46,8 +48,10 @@ import org.flowable.bpmn.model.UserTask;
 import org.flowable.common.engine.api.FlowableIllegalArgumentException;
 import org.flowable.engine.impl.bpmn.behavior.NoneEndEventActivityBehavior;
 import org.flowable.engine.impl.bpmn.behavior.NoneStartEventActivityBehavior;
+import org.flowable.engine.impl.bpmn.behavior.SendEventTaskActivityBehavior;
 import org.flowable.engine.impl.bpmn.helper.ClassDelegate;
 
+import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeSpec;
@@ -364,7 +368,9 @@ public class BpmnModelCreator {
         if (serviceTask.getClass().equals(ServiceTask.class)) {
             MethodSpec createServiceTaskMethod = sharedMethods
                 .computeIfAbsent("createServiceTaskFlow", this::createServiceTaskFlowElement);
-            methodBuilder.addStatement("$L.addFlowElement($N($S, $S, $S, $S, $S, $S, $S, $S, $S, $S, $L, $L, $L, $L, $S, $L, $L, $L, null))",
+            String mapName = addExtensionElements(methodBuilder, serviceTask.getExtensionElements());
+
+            methodBuilder.addStatement("$L.addFlowElement($N($S, $S, $S, $S, $S, $S, $S, $S, $S, $S, $L, $L, $L, $L, $S, $L, $L, $L, null, $L))",
                 elementName, createServiceTaskMethod,
                 serviceTask.getId(),
                 serviceTask.getName(),
@@ -385,7 +391,8 @@ public class BpmnModelCreator {
                 serviceTask.getDefaultFlow(),
                 serviceTask.isForCompensation(),
                 serviceTask.getXmlRowNumber(),
-                serviceTask.getXmlColumnNumber()
+                serviceTask.getXmlColumnNumber(),
+                mapName
             );
         } else if (serviceTask.getClass().equals(HttpServiceTask.class)) {
 
@@ -402,7 +409,7 @@ public class BpmnModelCreator {
 
             MethodSpec createServiceTaskMethod = sharedMethods
                 .computeIfAbsent("createServiceTaskFlow", this::createServiceTaskFlowElement);
-            methodBuilder.addStatement("$L.addFlowElement($N($S, $S, $S, $S, $S, $S, $S, $S, $S, $S, $L, $L, $L, $L, $S, $L, $L, $L, $L))",
+            methodBuilder.addStatement("$L.addFlowElement($N($S, $S, $S, $S, $S, $S, $S, $S, $S, $S, $L, $L, $L, $L, $S, $L, $L, $L, $L, null))",
                 elementName, createServiceTaskMethod,
                 serviceTask.getId(),
                 serviceTask.getName(),
@@ -430,6 +437,54 @@ public class BpmnModelCreator {
         } else {
             // using equals for the class as it is easy to make a mistake with different extensions of a ServiceTask
             throw new FlowableIllegalArgumentException("Service task type " + serviceTask.getClass() + " not yet supported");
+        }
+    }
+
+    protected String addExtensionElements(MethodSpec.Builder methodBuilder, Map<String, List<ExtensionElement>> extensionElementsMap) {
+        if (extensionElementsMap != null && !extensionElementsMap.isEmpty()) {
+            String mapName = "serviceTaskExtensionElements" + COUNTER.getAndIncrement();
+            methodBuilder.addStatement("java.util.Map<String, java.util.List<org.flowable.bpmn.model.ExtensionElement>> " + mapName + " = new java.util.HashMap<String, java.util.List<org.flowable.bpmn.model.ExtensionElement>>()");
+            for (Map.Entry<String, List<ExtensionElement>> extensionElements : extensionElementsMap.entrySet()) {
+                String listName = "extensionElement" + COUNTER.getAndIncrement();
+                methodBuilder.addStatement("java.util.List<org.flowable.bpmn.model.ExtensionElement> " + listName + " = new java.util.ArrayList<org.flowable.bpmn.model.ExtensionElement>()");
+                for (ExtensionElement extensionElement : extensionElements.getValue()) {
+                    String extensionElementName = "element" + COUNTER.getAndIncrement();
+                    methodBuilder.addStatement("$1T " + extensionElementName + " = new $1T()", ExtensionElement.class);
+                    methodBuilder.addStatement(extensionElementName + ".setName($S)", extensionElement.getName());
+                    methodBuilder.addStatement(extensionElementName + ".setElementText($S)", extensionElement.getElementText());
+                    String childAttributesVariableName = addAttributeValues(methodBuilder, extensionElement.getAttributes());
+                    if (childAttributesVariableName != null) {
+                        methodBuilder.addStatement(extensionElementName + ".setAttributes(" + childAttributesVariableName + ")");
+                    }
+                    methodBuilder.addStatement(listName + ".add(" + extensionElementName + ")");
+                }
+                methodBuilder.addStatement(mapName + ".put($S, " + listName + ")", extensionElements.getKey());
+            }
+            return mapName;
+        } else {
+            return null;
+        }
+    }
+
+    protected String addAttributeValues(MethodSpec.Builder methodBuilder, Map<String, List<ExtensionAttribute>> attributesMap) {
+        if (attributesMap != null && !attributesMap.isEmpty()) {
+            String mapName = "serviceTaskAttributes" + COUNTER.getAndIncrement();
+            methodBuilder.addStatement("java.util.Map<String, java.util.List<org.flowable.bpmn.model.ExtensionAttribute>> " + mapName + " = new java.util.HashMap<String, java.util.List<org.flowable.bpmn.model.ExtensionAttribute>>()");
+            for (Map.Entry<String, List<ExtensionAttribute>> extensionAttributes : attributesMap.entrySet()) {
+                String listName = "extensionElement" + COUNTER.getAndIncrement();
+                methodBuilder.addStatement("java.util.List<org.flowable.bpmn.model.ExtensionAttribute> " + listName + " = new java.util.ArrayList<org.flowable.bpmn.model.ExtensionAttribute>()");
+                for (ExtensionAttribute extensionAttribute : extensionAttributes.getValue()) {
+                    String extensionAttributeName = "attribute" + COUNTER.getAndIncrement();
+                    methodBuilder.addStatement("$1T " + extensionAttributeName + " = new $1T()", ExtensionAttribute.class);
+                    methodBuilder.addStatement(extensionAttributeName + ".setName($S)", extensionAttribute.getName());
+                    methodBuilder.addStatement(extensionAttributeName + ".setValue($S)", extensionAttribute.getValue());
+                    methodBuilder.addStatement(listName + ".add(" + extensionAttributeName + ")");
+                }
+                methodBuilder.addStatement(mapName + ".put($S, " + listName + ")", extensionAttributes.getKey());
+            }
+            return mapName;
+        } else {
+            return null;
         }
     }
 
@@ -683,10 +738,13 @@ public class BpmnModelCreator {
             .addParameter(int.class, "xmlRowNumber")
             .addParameter(int.class, "xmlColumnNumber")
             .addParameter(ParameterizedTypeName.get(Map.class, String.class, String.class), "extensions")
+            .addParameter(ParameterizedTypeName.get(ClassName.get(Map.class), ClassName.get(String.class), ParameterizedTypeName.get(List.class, ExtensionElement.class)), "extensionElements")
 
             .addStatement("$1T serviceTask = null", ServiceTask.class)
             .beginControlFlow("if (implementationType != null && \"http\".equals(implementationType))")
                 .addStatement("serviceTask = new $1T()", HttpServiceTask.class)
+            .nextControlFlow("else if (type != null && \"send-event\".equals(type))")
+                .addStatement("serviceTask = new $1T()", SendEventServiceTask.class)
             .nextControlFlow("else")
                 .addStatement("serviceTask = new $1T()", ServiceTask.class)
             .endControlFlow()
@@ -720,13 +778,28 @@ public class BpmnModelCreator {
             .addStatement("serviceTask.getFieldExtensions().add(fieldExtension)")
             .endControlFlow()
             .endControlFlow()
+            .addStatement("serviceTask.setExtensionElements(extensionElements)")
 
             .beginControlFlow("if (implementationType != null && \"http\".equals(implementationType))")
                 .addStatement("serviceTask.setType(\"http\")")
 //                .addStatement("serviceTask.setBehavior(new $T())", HttpActivityBehaviorImpl.class)
                 .addStatement("serviceTask.setBehavior(new $T(serviceTask))", CustomHttpActivityBehavior.class)
-            .nextControlFlow("else if (implementationType.equals(\"expression\"))")
+            .nextControlFlow("else if (implementationType != null && implementationType.equals(\"expression\"))")
                 .addStatement("serviceTask.setBehavior(new $T(serviceTask, implementation))", TempServiceTaskExpressionActivityBehavior.class)
+            .nextControlFlow("else if (type != null && type.equals(\"send-event\"))")
+                .addStatement("$T sendEventServiceTask = ($T) serviceTask", SendEventServiceTask.class, SendEventServiceTask.class)
+                .addStatement("sendEventServiceTask.setEventType(extensionElements.get(\"eventType\").get(0).getElementText())")
+
+                .addStatement("java.util.List<org.flowable.bpmn.model.IOParameter> ioParameters = new java.util.ArrayList<>()")
+                .beginControlFlow("for (ExtensionElement eventInParameter : extensionElements.get(\"eventInParameter\"))")
+                    .addStatement("org.flowable.bpmn.model.IOParameter ioParameter = new org.flowable.bpmn.model.IOParameter()")
+                    .addStatement("ioParameter.setSource(eventInParameter.getAttributeValue(null, \"source\"));")
+                    .addStatement("ioParameter.setTarget(eventInParameter.getAttributeValue(null, \"target\"));")
+                    .addStatement("ioParameters.add(ioParameter)")
+                .endControlFlow()
+                .addStatement("sendEventServiceTask.setEventInParameters(ioParameters)")
+                .addStatement("sendEventServiceTask.setSendSynchronously(true)")
+                .addStatement("serviceTask.setBehavior(new $T(sendEventServiceTask))", SendEventTaskActivityBehavior.class)
             .nextControlFlow("else")
                 .addStatement("serviceTask.setBehavior(new $T(serviceTask.getImplementation(), new java.util.ArrayList< org.flowable.engine.impl.bpmn.parser.FieldDeclaration >()))", ClassDelegate.class) // TODO: not the proper place - don't really want the dependency on flowable-engine?
             .endControlFlow()

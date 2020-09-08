@@ -30,6 +30,7 @@ import org.flowable.common.engine.impl.persistence.StrongUuidGenerator;
 import org.flowable.common.engine.impl.persistence.cache.EntityCache;
 import org.flowable.common.engine.impl.persistence.cache.EntityCacheImpl;
 import org.flowable.engine.impl.cfg.StandaloneProcessEngineConfiguration;
+import org.flowable.eventregistry.impl.configurator.EventRegistryEngineConfigurator;
 
 public class NoDbProcessEngineConfiguration extends StandaloneProcessEngineConfiguration {
 
@@ -45,11 +46,10 @@ public class NoDbProcessEngineConfiguration extends StandaloneProcessEngineConfi
        this.dbSqlSessionFactory = new NoDbDbSqlSessionFactory(false);
        this.customSessionFactories = Arrays.asList(this.dbSqlSessionFactory); // Needs to be set as initDbSqlSessionFactory won't be hit due to usingRelationalDatabase = false
 
+       this.eventRegistryConfigurator = new NoDbEventRegistryEngineConfigurator();
+
        // Disabled due to GraalVM (uses reflection)
        this.flowableFunctionDelegates = Collections.emptyList();
-       this.expressionEnhancers = Collections.emptyList();
-       this.customExpressionEnhancers = Collections.emptyList();
-       this.shortHandExpressionFunctions = Collections.emptyList();
    }
 
     @Override
@@ -92,6 +92,7 @@ public class NoDbProcessEngineConfiguration extends StandaloneProcessEngineConfi
         super.initEntityManagers();
 
         this.processDefinitionEntityManager = new NoDbProcessDefinitionEntityManager();
+        this.executionEntityManager = new CustomExecutionEntityManagerImpl(this, executionDataManager);
     }
 
     @Override
@@ -105,16 +106,6 @@ public class NoDbProcessEngineConfiguration extends StandaloneProcessEngineConfi
     }
 
     // Disable due to GraalVM (uses reflection)
-
-    @Override
-    public void initExpressionEnhancers() {
-
-    }
-
-    @Override
-    public void initShortHandExpressionFunctions() {
-
-    }
 
     @Override
     public void initFunctionDelegates() {

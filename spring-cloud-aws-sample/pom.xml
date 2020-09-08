@@ -40,22 +40,22 @@
         <dependency>
             <groupId>org.flowable.experimental</groupId>
             <artifactId>flowable-processor-annotations</artifactId>
-            <version>6.4.0-SNAPSHOT</version>
+            <version>6.5.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.flowable.experimental</groupId>
             <artifactId>flowable-processor</artifactId>
-            <version>6.4.0-SNAPSHOT</version>
+            <version>6.5.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.flowable.experimental</groupId>
             <artifactId>flowable-serverless</artifactId>
-            <version>6.4.0-SNAPSHOT</version>
+            <version>6.5.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.flowable</groupId>
             <artifactId>flowable-engine</artifactId>
-            <version>6.4.0</version>
+            <version>6.5.0</version>
         </dependency>
 
         <dependency>
