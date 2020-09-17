@@ -29,8 +29,9 @@ import org.flowable.eventregistry.impl.persistence.entity.ChannelDefinitionEntit
 import org.flowable.eventregistry.impl.persistence.entity.ChannelDefinitionEntityImpl;
 import org.flowable.eventregistry.impl.persistence.entity.EventDefinitionEntity;
 import org.flowable.eventregistry.impl.persistence.entity.EventDefinitionEntityImpl;
+import org.flowable.eventregistry.json.converter.EventJsonConverter;
 import org.flowable.eventregistry.model.ChannelModel;
-import org.springframework.core.io.Resource;
+import org.flowable.eventregistry.model.EventModel;
 
 /**
  * For demo purposes, quick access to proc def.
@@ -78,6 +79,12 @@ public class ServerlessUtil {
         DeploymentCache<ProcessDefinitionCacheEntry> processDefinitionCache = engineConfiguration.getProcessDefinitionCache();
         processDefinitionCache.add(PROCESS_DEFINITION_ID, cacheEntry);
 
+    }
+
+    public static void deployEventDefinition(EventRegistryEngineConfiguration eventRegistryEngineConfiguration, EventModel eventModel) {
+        EventJsonConverter eventJsonConverter = new EventJsonConverter();
+        String eventDefinitionJson = eventJsonConverter.convertToJson(eventModel);
+        deployEventDefinition(eventRegistryEngineConfiguration, eventDefinitionJson);
     }
 
     public static void deployEventDefinition(EventRegistryEngineConfiguration eventRegistryEngineConfiguration, String eventDefinitionJson) {
